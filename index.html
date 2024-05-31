@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATM System</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="scripts.js"></script>
+</head>
+<body>
+    <div id="login-header">
+        <pre>
+                  ***###########*#**        *###***********               
+             *##*******++++++++******####*****+===========                
+         *##***=========================+*+==========-                    
+       ****=========================================*                     
+     ##*===========================================+*#                    
+    **=============                      -===========*##                   
+   **===========                              =========+*#                
+   *==========****########*****                   =======**#              
+  *+========***+++++++++++++******###*               ======**#            
+ **================================++**###*            =====+**#          
+**======================================+**###           =====+**         
++=======              =========**  =========+**##          ====+**        
+====                   ==+++++++*#        ====++**##         ==++***      
+                         =+=+++++*#*#         ==+++*#*         =++***     
+                            ==++++++**#           =+**#*         +++*#    
+                                     =*              +***         =++*#   
+                                                                   =++*#  
+                                                                     ++*  
+                                                                      +** 
+                                                                       +**
+                                                                        +*
+                                                                         * 
+        </pre>
+    </div>
+    <div class="container">
+        <h1>Welcome to the ATM System!</h1>
+        <button id="user-login">User Login</button>
+        <button id="admin-login">Admin Login</button>
+        <button id="signup">Sign Up</button>
+        <button id="exit">Exit</button>
+    </div>
+    <div id="user-panel" class="hidden">
+        <h2>User Panel</h2>
+        <div id="user-actions">
+            <button onclick="viewBalance()">View Balance</button>
+            <button onclick="sendMoney()">Send Money</button>
+            <button onclick="changePassword()">Change Password</button>
+            <button onclick="viewTransactionHistory()">View Transaction History</button>
+            <button onclick="exitUserPanel()">Exit User Panel</button>
+        </div>
+        <div id="user-content"></div>
+    </div>
+    <div id="admin-panel" class="hidden">
+        <h2>Admin Panel</h2>
+        <div id="admin-actions">
+            <button onclick="generateAccountId()">Generate Account ID</button>
+            <button onclick="addMoney()">Add Money to Account</button>
+            <button onclick="deductMoney()">Deduct Money from Account</button>
+            <button onclick="viewAllActiveIds()">View All Active IDs</button>
+            <button onclick="viewAdminTransactionHistory()">View All Transactions</button>
+            <button onclick="exitAdminPanel()">Exit Admin Panel</button>
+        </div>
+        <div id="admin-content"></div>
+    </div>
+    <div id="signup-panel" class="hidden">
+        <h2>Sign Up</h2>
+        <form id="signup-form">
+            <label for="new-user-id">User ID:</label>
+            <input type="text" id="new-user-id" required><br>
+            <label for="new-password">Password:</label>
+            <input type="password" id="new-password" required><br>
+            <button type="submit">Create Account</button>
+            <button type="button" onclick="exitSignupPanel()">Cancel</button>
+        </form>
+    </div>
+</body>
+</html>
