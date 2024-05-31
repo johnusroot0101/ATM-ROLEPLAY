@@ -1,47 +1,13 @@
-async function fetchAccounts() {
-    const response = await fetch('/accounts');
-    return response.json();
-}
+let accountsDb = {};
 
-async function fetchAccount(userId) {
-    const response = await fetch(`/account/${userId}`);
-    if (response.ok) {
-        return response.json();
-    }
-    throw new Error('Account not found');
-}
-
-async function createAccount(userId, password) {
-    const response = await fetch('/account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, password })
-    });
-    return response.json();
-}
-
-async function updateAccount(userId, data) {
-    const response = await fetch(`/account/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-    return response.json();
-}
-
-document.getElementById('user-login').addEventListener('click', async function() {
+document.getElementById('user-login').addEventListener('click', function() {
     let userId = prompt("Enter your account ID:");
     let password = prompt("Enter your password:");
-    try {
-        const account = await fetchAccount(userId);
-        if (account.password === password) {
-            document.querySelector('.container').classList.add('hidden');
-            document.getElementById('user-panel').classList.remove('hidden');
-            sessionStorage.setItem('currentUserId', userId);
-        } else {
-            alert("Invalid credentials!");
-        }
-    } catch (error) {
+    if (userId in accountsDb && accountsDb[userId].password === password) {
+        document.querySelector('.container').classList.add('hidden');
+        document.getElementById('user-panel').classList.remove('hidden');
+        sessionStorage.setItem('currentUserId', userId);
+    } else {
         alert("Invalid credentials!");
     }
 });
@@ -62,12 +28,12 @@ document.getElementById('signup').addEventListener('click', function() {
     document.getElementById('signup-panel').classList.remove('hidden');
 });
 
-document.getElementById('signup-form').addEventListener('submit', async function(event) {
+document.getElementById('signup-form').addEventListener('submit', function(event) {
     event.preventDefault();
     let userId = document.getElementById('new-user-id').value;
     let password = document.getElementById('new-password').value;
     if (userId && password) {
-        await createAccount(userId, password);
+        accountsDb[userId] = { password: password, balance: 0, transactionHistory: [] };
         alert(`Account created successfully for user ID: ${userId}`);
         document.querySelector('.container').classList.remove('hidden');
         document.getElementById('signup-panel').classList.add('hidden');
@@ -78,7 +44,6 @@ document.getElementById('signup-form').addEventListener('submit', async function
 
 document.getElementById('exit').addEventListener('click', function() {
     alert("Exiting ATM System. Goodbye!");
-    sessionStorage.removeItem('currentUserId');
 });
 
 function exitUserPanel() {
@@ -97,142 +62,101 @@ function exitSignupPanel() {
     document.getElementById('signup-panel').classList.add('hidden');
 }
 
-async function viewBalance() {
+function viewBalance() {
     let userId = sessionStorage.getItem('currentUserId');
-    if (userId) {
-        try {
-            const account = await fetchAccount(userId);
-            alert(`Your current balance: $${account.balance}`);
-        } catch (error) {
-            alert("Unable to retrieve balance.");
-        }
+    if (userId && accountsDb[userId]) {
+        alert(`Your current balance: $${accountsDb[userId].balance}`);
+    } else {
+        alert("Unable to retrieve balance.");
     }
 }
 
-async function sendMoney() {
+function sendMoney() {
     let userId = sessionStorage.getItem('currentUserId');
-    if (userId) {
+    if (userId && accountsDb[userId]) {
         let receiverId = prompt("Enter receiver's account ID:");
         let amount = parseFloat(prompt("Enter amount to send:"));
-        try {
-            const account = await fetchAccount(userId);
-            const receiver = await fetchAccount(receiverId);
-            if (amount > 0 && account.balance >= amount) {
-                account.balance -= amount;
-                receiver.balance += amount;
-                account.transactionHistory.push(`Sent $${amount} to ${receiverId}`);
-                receiver.transactionHistory.push(`Received $${amount} from ${userId}`);
-                await updateAccount(userId, account);
-                await updateAccount(receiverId, receiver);
-                alert(`$${amount} sent to ${receiverId}. Your new balance: $${account.balance}`);
-            } else {
-                alert("Invalid input or insufficient funds.");
-            }
-        } catch (error) {
-            alert("Unable to send money.");
+        if (receiverId && amount && accountsDb[receiverId] && accountsDb[userId].balance >= amount) {
+            accountsDb[userId].balance -= amount;
+            accountsDb[receiverId].balance += amount;
+            let transaction = `Sent $${amount} to ${receiverId}`;
+            accountsDb[userId].transactionHistory.push(transaction);
+            accountsDb[receiverId].transactionHistory.push(`Received $${amount} from ${userId}`);
+            alert(`$${amount} sent to ${receiverId}. Your new balance: $${accountsDb[userId].balance}`);
+        } else {
+            alert("Invalid input or insufficient funds.");
         }
+    } else {
+        alert("Unable to send money.");
     }
 }
 
-async function changePassword() {
+function changePassword() {
     let userId = sessionStorage.getItem('currentUserId');
-    if (userId) {
+    if (userId && accountsDb[userId]) {
         let newPassword = prompt("Enter new password:");
         if (newPassword) {
-            try {
-                const account = await fetchAccount(userId);
-                account.password = newPassword;
-                await updateAccount(userId, account);
-                alert("Password changed successfully.");
-            } catch (error) {
-                alert("Unable to change password.");
-            }
+            accountsDb[userId].password = newPassword;
+            alert("Password changed successfully.");
         } else {
             alert("Invalid input.");
         }
+    } else {
+        alert("Unable to change password.");
     }
 }
 
-async function viewTransactionHistory() {
+function viewTransactionHistory() {
     let userId = sessionStorage.getItem('currentUserId');
-    if (userId) {
-        try {
-            const account = await fetchAccount(userId);
-            let history = account.transactionHistory.join('\n');
-            alert(`Transaction History:\n${history}`);
-        } catch (error) {
-            alert("Unable to retrieve transaction history.");
-        }
+    if (userId && accountsDb[userId]) {
+        let history = accountsDb[userId].transactionHistory.join('\n');
+        alert(`Transaction History:\n${history}`);
+    } else {
+        alert("Unable to retrieve transaction history.");
     }
 }
 
-async function generateAccountId() {
+function generateAccountId() {
     let newId = Math.random().toString(36).substring(2, 10).toUpperCase();
     let newPassword = Math.random().toString(36).substring(2, 10);
-    await createAccount(newId, newPassword);
+    accountsDb[newId] = { password: newPassword, balance: 0, transactionHistory: [] };
     alert(`Account ID ${newId} created successfully. Password: ${newPassword}`);
 }
 
-async function addMoney() {
+function addMoney() {
     let accountId = prompt("Enter account ID:");
     let amount = parseFloat(prompt("Enter amount to add:"));
-    if (accountId && amount && !isNaN(amount) && amount > 0) {
-        try {
-            const account = await fetchAccount(accountId);
-            account.balance += amount;
-            account.transactionHistory.push(`Added $${amount}`);
-            await updateAccount(accountId, account);
-            alert(`$${amount} added to account ${accountId}.`);
-        } catch (error) {
-            alert("Invalid input.");
-        }
+    if (accountId && amount && !isNaN(amount) && accountsDb[accountId]) {
+        accountsDb[accountId].balance += amount;
+        accountsDb[accountId].transactionHistory.push(`Added $${amount}`);
+        alert(`$${amount} added to account ${accountId}.`);
     } else {
         alert("Invalid input.");
     }
 }
 
-async function deductMoney() {
+function deductMoney() {
     let accountId = prompt("Enter account ID:");
     let amount = parseFloat(prompt("Enter amount to deduct:"));
-    if (accountId && amount && !isNaN(amount) && amount > 0) {
-        try {
-            const account = await fetchAccount(accountId);
-            if (account.balance >= amount) {
-                account.balance -= amount;
-                account.transactionHistory.push(`Deducted $${amount}`);
-                await updateAccount(accountId, account);
-                alert(`$${amount} deducted from account ${accountId}.`);
-            } else {
-                alert("Insufficient funds.");
-            }
-        } catch (error) {
-            alert("Invalid input.");
-        }
+    if (accountId && amount && !isNaN(amount) && accountsDb[accountId] && accountsDb[accountId].balance >= amount) {
+        accountsDb[accountId].balance -= amount;
+        accountsDb[accountId].transactionHistory.push(`Deducted $${amount}`);
+        alert(`$${amount} deducted from account ${accountId}.`);
     } else {
-        alert("Invalid input.");
+        alert("Invalid input or insufficient funds.");
     }
 }
 
-async function viewAllActiveIds() {
-    try {
-        const accounts = await fetchAccounts();
-        let ids = Object.keys(accounts).join('\n');
-        alert(`Active Account IDs:\n${ids}`);
-    } catch (error) {
-        alert("Unable to retrieve active account IDs.");
-    }
+function viewAllActiveIds() {
+    let ids = Object.keys(accountsDb).join('\n');
+    alert(`Active Account IDs:\n${ids}`);
 }
 
-async function viewAdminTransactionHistory() {
-    try {
-        const accounts = await fetchAccounts();
-        let allTransactions = [];
-        for (let accountId in accounts) {
-            let transactions = accounts[accountId].transactionHistory.map(t => `${accountId}: ${t}`);
-            allTransactions = allTransactions.concat(transactions);
-        }
-        alert(`All Transactions:\n${allTransactions.join('\n')}`);
-    } catch (error) {
-        alert("Unable to retrieve transaction history.");
+function viewAdminTransactionHistory() {
+    let allTransactions = [];
+    for (let accountId in accountsDb) {
+        let transactions = accountsDb[accountId].transactionHistory.map(t => `${accountId}: ${t}`);
+        allTransactions = allTransactions.concat(transactions);
     }
+    alert(`All Transactions:\n${allTransactions.join('\n')}`);
 }
